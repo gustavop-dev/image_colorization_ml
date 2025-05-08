@@ -1,0 +1,17 @@
+# Django and REST framework
+django==5.2.1
+djangorestframework==3.16.0
+
+# Image processing
+pillow==11.2.1
+
+# Data manipulation and machine learning
+numpy==2.2.5
+tensorflow==2.19.0
+matplotlib==3.10.1
+scikit-image==0.25.2
+scikit-learn==1.5.0
+opencv-python==4.9.0.80
+
+# Utilities
+python-dotenv==1.0.1 
