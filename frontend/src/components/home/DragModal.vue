@@ -20,8 +20,8 @@
               <div ref="float3" class="absolute top-1/2 left-1/3 w-24 h-24 bg-gradient-to-br from-blue-200/50 to-transparent rounded-full blur-md"></div>
             </div>
             
-            <!-- Main animated icon -->
-            <div ref="iconContainer" class="relative">
+            <!-- Main animated icon (placed behind texts) -->
+            <div ref="iconContainer" class="relative z-0">
               <!-- Pulse rings -->
               <div ref="ring1" class="absolute inset-0 bg-purple-400/20 rounded-full scale-0"></div>
               <div ref="ring2" class="absolute inset-0 bg-pink-400/20 rounded-full scale-0"></div>
@@ -36,12 +36,12 @@
             </div>
             
             <!-- Main text -->
-            <h2 ref="mainText" class="text-5xl font-black text-transparent bg-clip-text bg-gradient-to-r from-purple-600 via-pink-600 to-blue-600 text-center opacity-0">
+            <h2 ref="mainText" class="text-5xl font-black text-transparent bg-clip-text bg-gradient-to-r from-purple-600 via-pink-600 to-blue-600 text-center opacity-0 z-10">
               ¡Suéltala aquí!
             </h2>
             
             <!-- Secondary text -->
-            <p ref="subText" class="text-xl text-gray-600 text-center max-w-md leading-relaxed opacity-0">
+            <p ref="subText" class="text-xl text-gray-600 text-center max-w-md leading-relaxed opacity-0 z-10">
               Tu imagen está a punto de transformarse en una explosión de colores vibrantes
             </p>
             
@@ -193,24 +193,29 @@
       ease: "power1.inOut"
     })
   
-    // Particles animation
-    modalParticles.value.forEach((particle, i) => {
-      gsap.set(particle, { opacity: 1 })
-      
-      const angle = (i / modalParticles.value.length) * Math.PI * 2
-      const distance = 150 + Math.random() * 100
-      
-      gsap.to(particle, {
-        x: Math.cos(angle) * distance,
-        y: Math.sin(angle) * distance,
-        opacity: 0,
-        scale: 0.5,
-        duration: 2 + Math.random(),
-        repeat: -1,
-        delay: i * 0.1,
-        ease: "power2.out"
+    // Function to start particles animation after entry timeline ends
+    const startParticles = () => {
+      modalParticles.value.forEach((particle, i) => {
+        gsap.set(particle, { opacity: 1 })
+
+        const angle = (i / modalParticles.value.length) * Math.PI * 2
+        const distance = 150 + Math.random() * 100
+
+        gsap.to(particle, {
+          x: Math.cos(angle) * distance,
+          y: Math.sin(angle) * distance,
+          opacity: 0,
+          scale: 0.5,
+          duration: 2 + Math.random(),
+          repeat: -1,
+          delay: i * 0.1,
+          ease: "power2.out"
+        })
       })
-    })
+    }
+
+    // Launch particles once the main entry timeline is complete
+    tl.eventCallback("onComplete", startParticles)
   })
   </script>
   
