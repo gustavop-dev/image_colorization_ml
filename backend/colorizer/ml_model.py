@@ -1,11 +1,14 @@
 import numpy as np
-import cv2
-from skimage import color
-import os
 import tensorflow as tf
-from tensorflow.keras.models import Sequential, Model
-from tensorflow.keras.layers import Conv2D, UpSampling2D, InputLayer, Conv2DTranspose
-from tensorflow.keras.preprocessing.image import img_to_array, load_img
+import keras
+import cv2
+from keras.layers import MaxPool2D,Conv2D,UpSampling2D,Input,Dropout
+from keras.models import Sequential
+from keras.preprocessing.image import img_to_array
+import os
+from tqdm import tqdm
+import re
+import matplotlib.pyplot as plt
 
 class ColorizationModel:
     """
@@ -21,6 +24,8 @@ class ColorizationModel:
         """
         Placeholder for model building
         """
+        
+
         self.initialized = True
         return self.model
     
