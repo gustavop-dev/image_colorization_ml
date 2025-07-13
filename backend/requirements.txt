@@ -12,6 +12,10 @@ matplotlib==3.10.1
 scikit-image==0.25.2
 scikit-learn==1.5.0
 opencv-python==4.9.0.80
+tqdm==4.66.1
+os-sys==0.2.1
+re ==0.2.1
+
 
 # Utilities
 python-dotenv==1.0.1 
