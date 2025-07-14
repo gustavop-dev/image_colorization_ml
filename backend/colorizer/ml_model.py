@@ -15,11 +15,11 @@ from typing import Tuple, List
 class ColorizationModel:
     """
     Class for handling image colorization using a deep learning model.
-    This is a simplified placeholder class for development.
     """
-    def __init__(self):
+    def __init__(self, img_size: int = 256):
         self.model = None
-        self.input_shape = (256, 256, 1)  # Default input shape
+        self.img_size = img_size  
+        self.input_shape = (img_size, img_size, 3) 
         self.initialized = False
     
     # Helpers
@@ -47,7 +47,7 @@ class ColorizationModel:
             img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)            # BGR ➜ RGB
             img = cv2.resize(img, (self.img_size, self.img_size))  
             img = img.astype(np.float32) / 255.0                  
-            images.append(img)
+            images.append(img_to_array(img))
 
         return images
 
@@ -68,13 +68,15 @@ class ColorizationModel:
         # turn lists into numpy arrays
         color_arr = np.array(color_imgs)
         gray_arr = np.array(gray_imgs)
-        idx = np.random.permutation(len(color_arr))
-        color_arr, gray_arr = color_arr[idx], gray_arr[idx]
+        color_arr = np.reshape(color_arr, (len(color_arr), self.img_size, self.img_size, 3))
+        gray_arr = np.reshape(gray_arr, (len(gray_arr), self.img_size, self.img_size, 3))
 
         # Split train / test
         split_idx = int(len(color_arr) * train_split)
-        self.train_gray, self.val_gray = np.split(gray_arr, [split_idx])
-        self.train_color, self.val_color = np.split(color_arr, [split_idx])
+        self.train_gray = gray_arr[:split_idx]
+        self.val_gray = gray_arr[split_idx:]
+        self.train_color = color_arr[:split_idx]
+        self.val_color = color_arr[split_idx:]
 
         print(f"Train set : {self.train_color.shape}")
         print(f"Val   set : {self.val_color.shape}")
@@ -106,26 +108,31 @@ class ColorizationModel:
         inputs = tf.keras.layers.Input(shape=self.input_shape)
 
         # Encoder
-        d1 = self._down(128, (3, 3), batch_norm=False)(inputs)
-        d2 = self._down(128, (3, 3), batch_norm=False)(d1)
-        d3 = self._down(256, (3, 3), batch_norm=True)(d2)
-        d4 = self._down(512, (3, 3), batch_norm=True)(d3)
-        d5 = self._down(512, (3, 3), batch_norm=True)(d4)
+        d1 = self._down(128, (3, 3), apply_batch_normalization=False)(inputs)
+        d2 = self._down(128, (3, 3), apply_batch_normalization=False)(d1)
+        d3 = self._down(256, (3, 3), apply_batch_normalization=True)(d2)
+        d4 = self._down(512, (3, 3), apply_batch_normalization=True)(d3)
+        d5 = self._down(512, (3, 3), apply_batch_normalization=True)(d4)
 
         # Decoder + skip connections
-        u1 = self._up(512, (3, 3))(d5);  u1 = tf.keras.layers.concatenate([u1, d4])
-        u2 = self._up(256, (3, 3))(u1);  u2 = tf.keras.layers.concatenate([u2, d3])
-        u3 = self._up(128, (3, 3))(u2);  u3 = tf.keras.layers.concatenate([u3, d2])
-        u4 = self._up(128, (3, 3))(u3);  u4 = tf.keras.layers.concatenate([u4, d1])
-        u5 = self._up(3,   (3, 3))(u4);  u5 = tf.keras.layers.concatenate([u5, inputs])
+        u1 = self._up(512, (3, 3), dropout=False)(d5)
+        u1 = tf.keras.layers.concatenate([u1, d4])
+        u2 = self._up(256, (3, 3), dropout=False)(u1)
+        u2 = tf.keras.layers.concatenate([u2, d3])
+        u3 = self._up(128, (3, 3), dropout=False)(u2)
+        u3 = tf.keras.layers.concatenate([u3, d2])
+        u4 = self._up(128, (3, 3), dropout=False)(u3)
+        u4 = tf.keras.layers.concatenate([u4, d1])
+        u5 = self._up(3, (3, 3), dropout=False)(u4)
+        u5 = tf.keras.layers.concatenate([u5, inputs])
 
-        outputs = tf.keras.layers.Conv2D(3, (2, 2), padding="same")(u5)
+        outputs = tf.keras.layers.Conv2D(3, (2, 2), strides=1, padding="same")(u5)
         self.model = tf.keras.Model(inputs, outputs, name="u-net_colorizer")
 
         self.model.compile(
-            optimizer=tf.keras.optimizers.Adam(1e-3),
-            loss="mae",
-            metrics=["accuracy"],
+            optimizer=tf.keras.optimizers.Adam(learning_rate=0.001),
+            loss="mean_absolute_error",
+            metrics=["acc"],
         )
         return self.model
     
@@ -175,6 +182,29 @@ class ColorizationModel:
             validation_data=(self.val_gray, self.val_color),
             epochs=epochs,
             batch_size=batch_size,
-            verbose=1,
+            verbose= True,
         )
         return history      
+    
+    def evaluate(self) -> List[float]:
+        """
+        Evaluate the model on validation data
+        """
+        if self.model is None:
+            raise RuntimeError("Model not built. Call build_model() first.")
+        if not hasattr(self, "val_gray"):
+            raise RuntimeError("Dataset not loaded. Call load_dataset() first.")
+            
+        return self.model.evaluate(self.val_gray, self.val_color)
+    
+    def save_model(self, path: str | Path) -> None:
+        """
+        Save the trained model to a specified path.
+        """
+        if self.model is None:
+            raise RuntimeError("Model not built. Call build_model() first.")
+        
+        path = Path(path)
+        path.parent.mkdir(parents=True, exist_ok=True)
+        self.model.save(str(path))
+        print(f"Model saved to {path}")
