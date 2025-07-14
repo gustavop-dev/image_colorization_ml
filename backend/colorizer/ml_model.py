@@ -101,31 +101,80 @@ class ColorizationModel:
 
     # Model
 
-    def build_model(self):
-        """
-        Placeholder for model building
-        """
-        
+    def build_model(self) -> tf.keras.Model:
+        # Build the U-Net model for colorization and compile it
+        inputs = tf.keras.layers.Input(shape=self.input_shape)
 
-        self.initialized = True
+        # Encoder
+        d1 = self._down(128, (3, 3), batch_norm=False)(inputs)
+        d2 = self._down(128, (3, 3), batch_norm=False)(d1)
+        d3 = self._down(256, (3, 3), batch_norm=True)(d2)
+        d4 = self._down(512, (3, 3), batch_norm=True)(d3)
+        d5 = self._down(512, (3, 3), batch_norm=True)(d4)
+
+        # Decoder + skip connections
+        u1 = self._up(512, (3, 3))(d5);  u1 = tf.keras.layers.concatenate([u1, d4])
+        u2 = self._up(256, (3, 3))(u1);  u2 = tf.keras.layers.concatenate([u2, d3])
+        u3 = self._up(128, (3, 3))(u2);  u3 = tf.keras.layers.concatenate([u3, d2])
+        u4 = self._up(128, (3, 3))(u3);  u4 = tf.keras.layers.concatenate([u4, d1])
+        u5 = self._up(3,   (3, 3))(u4);  u5 = tf.keras.layers.concatenate([u5, inputs])
+
+        outputs = tf.keras.layers.Conv2D(3, (2, 2), padding="same")(u5)
+        self.model = tf.keras.Model(inputs, outputs, name="u-net_colorizer")
+
+        self.model.compile(
+            optimizer=tf.keras.optimizers.Adam(1e-3),
+            loss="mae",
+            metrics=["accuracy"],
+        )
         return self.model
     
-    def colorize(self, image_path, output_path):
+    def colorize(self, image_path: str | Path, save_to: str | Path | None = None) -> np.ndarray:
         """
-        Placeholder for colorization process
+        Colorize a single grayscale image and optionally save it.
+
+        Args:
+            image_path: Path to input grayscale image.
+            save_to: Optional path to save the colorized output.
+
+        Returns:
+            Colorized image array in uint8 RGB format.
         """
-        # In a real implementation, this would colorize the image
-        # For now, this is just a placeholder
-        
-        # Create a dummy file or just return the path
-        with open(output_path, 'w') as f:
-            f.write('Placeholder for colorized image')
-        
-        return output_path
+        if self.model is None:
+            raise RuntimeError("Modelo no construido.")
+
+        # preprocess the image
+        img = cv2.imread(str(image_path), cv2.IMREAD_COLOR)
+        img_rgb = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
+        img_rgb = cv2.resize(img_rgb, (self.img_size, self.img_size))
+        inp = (img_rgb.astype(np.float32) / 255.0)[None, ...]  # shape (1, H, W, 3)
+
+        # inference
+        pred = self.model.predict(inp)[0]          # (H, W, 3), float32
+        pred = np.clip(pred * 255.0, 0, 255).astype(np.uint8)
+
+        # Save output if requested
+        if save_to is not None:
+            Path(save_to).parent.mkdir(parents=True, exist_ok=True)
+            cv2.imwrite(str(save_to), cv2.cvtColor(pred, cv2.COLOR_RGB2BGR))
+
+        return pred
+
     
-    def train(self, dataset_path, epochs=10, batch_size=32):
+    def train(self, epochs: int = 50, batch_size: int = 32) -> tf.keras.callbacks.History:
         """
         Placeholder for model training
         """
-        print(f"[Mock] Training model on {dataset_path} for {epochs} epochs with batch size {batch_size}")
-        return True 
+        if self.model is None:
+            raise RuntimeError("call build_model() first to create the model.")
+        if not hasattr(self, "train_gray"):
+            raise RuntimeError("Dataset not loaded. Call load_dataset() first.")
+
+        history = self.model.fit(
+            self.train_gray, self.train_color,
+            validation_data=(self.val_gray, self.val_color),
+            epochs=epochs,
+            batch_size=batch_size,
+            verbose=1,
+        )
+        return history      
