@@ -6,12 +6,16 @@ djangorestframework==3.16.0
 pillow==11.2.1
 
 # Data manipulation and machine learning
-numpy==2.2.5
+numpy>=1.26.0,<2.2.0
 tensorflow==2.19.0
 matplotlib==3.10.1
 scikit-image==0.25.2
 scikit-learn==1.5.0
 opencv-python==4.9.0.80
+tqdm==4.66.1
+os-sys==0.2.1
+re ==0.2.1
+
 
 # Utilities
 python-dotenv==1.0.1 
