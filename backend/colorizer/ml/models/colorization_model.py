@@ -92,7 +92,7 @@ class ColorizationModel:
         self.trainer = ModelTrainer(self.model)
         self.colorizer = ImageColorizer(self.model, self.img_size)
         return self.model
-    
+      
     def load_trained_model(self, model_path: str | Path) -> None:
         """
         Load a pre-trained colorization model from disk.
