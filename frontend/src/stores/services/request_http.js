@@ -68,3 +68,28 @@ export async function get_request(url) {
 export async function create_request(url, params) {
   return await makeRequest("POST", url, params);
 }
+
+/**
+ * Upload file request.
+ * @param {string} url - Endpoint.
+ * @param {FormData} formData - FormData object containing file and other params.
+ * @returns {object} - Response from endpoint.
+ */
+export async function upload_request(url, formData) {
+  const csrfToken = getCookie('csrftoken');
+  const headers = {
+    "X-CSRFToken": csrfToken
+    // Don't add Content-Type for FormData, axios handles it automatically
+  };
+
+  try {
+    const response = await axios.post(`/api/${url}`, formData, { 
+      headers,
+      responseType: 'blob' // To handle binary file responses
+    });
+    return response;
+  } catch (error) {
+    console.error(error);
+    throw error;
+  }
+}
