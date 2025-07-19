@@ -1,22 +1,22 @@
 <template>
   <div class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-md">
-    <!-- Main container -->
+    <!-- Contenedor principal -->
     <div ref="container" class="relative bg-white/95 backdrop-blur-xl rounded-3xl p-12 shadow-2xl max-w-lg w-full mx-8 opacity-0 scale-90">
       
-      <!-- Animated background gradient -->
+      <!-- Gradiente de fondo animado -->
       <div ref="bgGradient" class="absolute inset-0 bg-gradient-to-br from-purple-400/20 via-pink-400/20 to-blue-400/20 rounded-3xl blur-2xl"></div>
       
-      <!-- Content -->
+      <!-- Contenido -->
       <div class="relative z-10 text-center space-y-8">
         
-        <!-- Animated AI brain icon -->
+        <!-- Icono de cerebro de IA animado -->
         <div ref="iconContainer" class="relative mx-auto w-24 h-24">
-          <!-- Pulsing rings -->
+          <!-- Anillos pulsantes -->
           <div ref="ring1" class="absolute inset-0 bg-purple-400/30 rounded-full"></div>
           <div ref="ring2" class="absolute inset-0 bg-pink-400/30 rounded-full"></div>
           <div ref="ring3" class="absolute inset-0 bg-blue-400/30 rounded-full"></div>
           
-          <!-- Main icon -->
+          <!-- Icono principal -->
           <div ref="mainIcon" class="relative bg-gradient-to-br from-purple-500 to-pink-500 rounded-2xl p-5 shadow-lg">
             <svg class="w-14 h-14 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"></path>
@@ -24,7 +24,7 @@
           </div>
         </div>
 
-        <!-- Main title with typing effect -->
+        <!-- Título principal con efecto de escritura -->
         <div>
           <h2 ref="title" class="text-3xl font-bold text-gray-800 mb-2">
             {{ currentTitle }}
@@ -34,25 +34,25 @@
           </p>
         </div>
 
-        <!-- Progress bar -->
+        <!-- Barra de progreso -->
         <div class="space-y-4">
           <div ref="progressContainer" class="relative bg-gray-200 rounded-full h-3 overflow-hidden">
             <div ref="progressBar" class="absolute left-0 top-0 h-full bg-gradient-to-r from-purple-500 via-pink-500 to-blue-500 rounded-full transition-all duration-300 ease-out"
                  :style="{ width: `${progress}%` }">
             </div>
-            <!-- Shine effect -->
+            <!-- Efecto de brillo -->
             <div ref="progressShine" class="absolute inset-0 bg-gradient-to-r from-transparent via-white/30 to-transparent transform -translate-x-full">
             </div>
           </div>
           
-          <!-- Progress text -->
+          <!-- Texto de progreso -->
           <div class="flex justify-between text-sm text-gray-500">
             <span>{{ progressText }}</span>
             <span>{{ progress }}%</span>
           </div>
         </div>
 
-        <!-- Processing steps -->
+        <!-- Pasos del procesamiento -->
         <div ref="stepsContainer" class="space-y-3">
           <div v-for="(step, index) in steps" :key="index" 
                :ref="el => stepElements[index] = el"
@@ -69,16 +69,16 @@
           </div>
         </div>
 
-        <!-- Cancel button -->
+        <!-- Botón de cancelar -->
         <button 
           @click="$emit('cancel')"
           ref="cancelBtn"
           class="px-6 py-2 text-gray-500 hover:text-gray-700 transition-colors duration-200 font-medium">
-          Cancel
+          Cancelar
         </button>
       </div>
 
-      <!-- Floating particles -->
+      <!-- Partículas flotantes -->
       <div ref="particlesContainer" class="absolute inset-0 pointer-events-none">
         <div v-for="i in 20" :key="i" 
              :ref="el => particles[i-1] = el"
@@ -130,33 +130,33 @@ const particles = ref([])
 
 // Data
 const steps = [
-  'Analyzing image structure',
-  'Detecting objects and features', 
-  'Applying AI colorization',
-  'Enhancing color vibrancy',
-  'Finalizing your masterpiece'
+  'Analizando estructura de la imagen',
+  'Detectando objetos y características', 
+  'Aplicando colorización con IA',
+  'Mejorando vibración del color',
+  'Finalizando tu obra maestra'
 ]
 
 const titles = [
-  'Processing your image...',
-  'AI is working its magic...',
-  'Adding vibrant colors...',
-  'Almost ready...',
-  'Creating your masterpiece!'
+  'Procesando tu imagen...',
+  'La IA está trabajando su magia...',
+  'Añadiendo colores vibrantes...',
+  'Casi listo...',
+  '¡Creando tu obra maestra!'
 ]
 
 const subtitles = [
-  'Our AI is analyzing your image',
-  'Intelligent colorization in progress', 
-  'Applying beautiful color palettes',
-  'Fine-tuning the details',
-  'Your colorized image is ready!'
+  'Nuestra IA está analizando tu imagen',
+  'Colorización inteligente en progreso', 
+  'Aplicando hermosas paletas de colores',
+  'Ajustando los detalles finales',
+  '¡Tu imagen colorizada está lista!'
 ]
 
 // Computed
 const currentTitle = computed(() => titles[props.currentStep] || titles[0])
 const currentSubtitle = computed(() => subtitles[props.currentStep] || subtitles[0])
-const progressText = computed(() => steps[props.currentStep] || 'Processing...')
+const progressText = computed(() => steps[props.currentStep] || 'Procesando...')
 
 // Methods
 const getParticleClass = (index) => {

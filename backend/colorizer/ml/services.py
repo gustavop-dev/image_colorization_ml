@@ -10,7 +10,13 @@ from typing import Optional
 from pathlib import Path
 
 from .models.colorization_model import ColorizationModel
-from .config import COLORIZATION_MODEL_PATH, MODEL_INPUT_SIZE
+from .config import (
+    COLORIZATION_MODEL_PATH, 
+    MODEL_INPUT_SIZE, 
+    AUTO_COMPRESS, 
+    MAX_FILE_SIZE_MB,
+    USE_PATCH_PROCESSING
+)
 
 logger = logging.getLogger(__name__)
 
@@ -95,22 +101,43 @@ class ColorizationService:
         """
         return self._is_loaded and self._model is not None
     
-    def colorize_image(self, input_path: Path, output_path: Optional[Path] = None):
+    def colorize_image(self, input_path: Path, output_path: Optional[Path] = None, use_patches: Optional[bool] = None, auto_compress: Optional[bool] = None, max_size_mb: Optional[float] = None):
         """
-        Colorize an image using the loaded model.
+        Colorize an image using the loaded model with smart compression and high-quality processing.
         
         Args:
             input_path (Path): Path to input grayscale image
             output_path (Optional[Path]): Path to save colorized image
+            use_patches (Optional[bool]): Whether to use patch-based processing 
+                                        (uses config default if None)
+            auto_compress (Optional[bool]): Whether to auto-compress large images 
+                                          (uses config default if None)
+            max_size_mb (Optional[float]): Max file size before compression
+                                         (uses config default if None)
             
         Returns:
-            np.ndarray: Colorized image array
+            np.ndarray: Colorized image array with original dimensions
             
         Raises:
             RuntimeError: If model isn't loaded
         """
         model = self.get_model()
-        return model.colorize(input_path, output_path)
+        
+        # Use config defaults if not specified
+        if use_patches is None:
+            use_patches = USE_PATCH_PROCESSING
+        if auto_compress is None:
+            auto_compress = AUTO_COMPRESS
+        if max_size_mb is None:
+            max_size_mb = MAX_FILE_SIZE_MB
+            
+        return model.colorize(
+            input_path, 
+            output_path, 
+            use_patches=use_patches,
+            auto_compress=auto_compress,
+            max_size_mb=max_size_mb
+        )
 
 # Global service instance
 colorization_service = ColorizationService() 
