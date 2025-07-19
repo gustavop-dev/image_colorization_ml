@@ -45,18 +45,33 @@
         @dragenter.prevent="handleDragEnter"
         @dragleave.prevent="handleDragLeave"
         class="relative w-full max-w-2xl opacity-0"
+        :class="{ 'pointer-events-none': !isServerReady }"
       >
         <!-- Color shadow -->
         <div class="absolute inset-0 bg-gradient-to-r from-purple-400 via-pink-400 to-blue-400 rounded-3xl blur-2xl opacity-20 transform scale-95 animate-pulse"></div>
         
         <!-- Main container -->
-        <div class="relative bg-white/80 backdrop-blur-lg rounded-3xl shadow-2xl border border-gray-100 p-16 transition-all duration-500 hover:shadow-3xl hover:scale-[1.02] group">
+        <div class="relative bg-white/80 backdrop-blur-lg rounded-3xl shadow-2xl border border-gray-100 p-16 transition-all duration-500 group"
+             :class="isServerReady ? 'hover:shadow-3xl hover:scale-[1.02]' : 'opacity-60'">
           
           <!-- Hover effect -->
-          <div class="absolute inset-0 bg-gradient-to-br from-purple-500/5 via-transparent to-pink-500/5 rounded-3xl opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
+          <div class="absolute inset-0 bg-gradient-to-br from-purple-500/5 via-transparent to-pink-500/5 rounded-3xl opacity-0 group-hover:opacity-100 transition-opacity duration-500"
+               v-if="isServerReady"></div>
+          
+          <!-- Server not ready overlay -->
+          <div v-if="!isServerReady" class="absolute inset-0 bg-gray-500/10 rounded-3xl flex items-center justify-center">
+            <div class="text-center">
+              <svg class="w-8 h-8 text-gray-400 mx-auto mb-2 animate-spin" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
+              </svg>
+              <p class="text-gray-500 text-sm font-medium">
+                {{ serverError || 'Connecting to server...' }}
+              </p>
+            </div>
+          </div>
           
           <!-- Content -->
-          <div class="relative flex flex-col items-center">
+          <div class="relative flex flex-col items-center" :class="{ 'opacity-30': !isServerReady }">
             <!-- Animated icon -->
             <div ref="uploadIcon" class="mb-8 relative">
               <div class="absolute inset-0 bg-gradient-to-br from-purple-400 to-pink-400 rounded-full blur-xl opacity-30 scale-150"></div>
@@ -69,12 +84,17 @@
 
             <!-- Main text -->
             <h3 class="text-3xl font-bold text-gray-800 mb-3">
-              Arrastra tu imagen aquí
+              {{ isServerReady ? 'Arrastra tu imagen aquí' : 'Preparando servidor...' }}
             </h3>
             
             <!-- Secondary text -->
             <p class="text-gray-500 text-lg mb-6">
-              o haz <span class="text-purple-600 font-semibold cursor-pointer hover:text-purple-700 transition-colors">clic para explorar</span>
+              <span v-if="isServerReady">
+                o haz <span class="text-purple-600 font-semibold cursor-pointer hover:text-purple-700 transition-colors">clic para explorar</span>
+              </span>
+              <span v-else class="text-gray-400">
+                {{ serverError || 'Conectando con el servidor de IA...' }}
+              </span>
             </p>
 
             <!-- Format pills -->
@@ -89,7 +109,9 @@
               type="file"
               @change="handleFileSelect"
               accept="image/*"
-              class="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+              :disabled="!isServerReady"
+              class="absolute inset-0 w-full h-full opacity-0"
+              :class="isServerReady ? 'cursor-pointer' : 'cursor-not-allowed'"
             />
           </div>
         </div>
@@ -112,15 +134,63 @@
       </div>
     </div>
 
+    <!-- Server status indicator -->
+    <div v-if="!isServerReady && healthStore.isInitialized" 
+         class="fixed top-4 right-4 z-40 bg-yellow-100 border border-yellow-300 text-yellow-800 px-4 py-2 rounded-lg shadow-lg">
+      <div class="flex items-center gap-2">
+        <svg class="w-5 h-5 animate-spin" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
+        </svg>
+        <span class="text-sm font-medium">{{ serverError || 'Connecting to server...' }}</span>
+      </div>
+    </div>
+
+    <!-- Error notification -->
+    <div v-if="error" 
+         class="fixed top-4 right-4 z-40 bg-red-100 border border-red-300 text-red-800 px-4 py-2 rounded-lg shadow-lg max-w-sm">
+      <div class="flex items-center gap-2">
+        <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+          <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clip-rule="evenodd"></path>
+        </svg>
+        <span class="text-sm">{{ error }}</span>
+        <button @click="error = null" class="ml-2 text-red-600 hover:text-red-800">
+          <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+            <path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd"></path>
+          </svg>
+        </button>
+      </div>
+    </div>
+
     <!-- Drag modal -->
-    <DragModal v-if="isDragging" />
+    <DragModal v-if="isDragging && isServerReady" />
+
+    <!-- Progress modal -->
+    <ColorizationProgress 
+      v-if="showProgress"
+      :progress="currentProgress"
+      :current-step="currentStep"
+      @cancel="handleCancelProgress"
+    />
+
+    <!-- Result modal -->
+    <ColorizationResult 
+      v-if="showResult"
+      :original-image="colorizationStore.originalImage"
+      :colorized-image="colorizationStore.colorizedImage"
+      @download="handleDownload"
+      @try-another="handleTryAnother"
+      @close="handleCloseResult"
+    />
   </div>
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, computed } from 'vue'
 import { gsap } from 'gsap'
 import DragModal from '@/components/home/DragModal.vue'
+import ColorizationProgress from '@/components/home/ColorizationProgress.vue'
+import ColorizationResult from '@/components/home/ColorizationResult.vue'
+import { colorizationStore, healthStore } from '@/stores'
 
 // Refs
 const isDragging = ref(false)
@@ -144,14 +214,40 @@ const features = ref(null)
 // Drag counter for nested drags
 const dragCounter = ref(0)
 
+// Modal states
+const showProgress = ref(false)
+const showResult = ref(false)
+const currentProgress = ref(0)
+const currentStep = ref(0)
+
+// Error state
+const error = ref(null)
+
+// Progress simulation
+let progressInterval = null
+
+// Computed properties
+const isServerReady = computed(() => healthStore.isReadyForColorization())
+const serverError = computed(() => healthStore.error)
+
 // Handlers
-const handleDrop = (e) => {
+const handleDrop = async (e) => {
   e.preventDefault()
   dragCounter.value = 0
   isDragging.value = false
+  
+  const files = e.dataTransfer.files
+  if (files.length > 0) {
+    await processImageFile(files[0])
+  }
 }
 
 const handleDragEnter = () => {
+  // Only allow drag if server is ready
+  if (!isServerReady.value) {
+    return
+  }
+  
   dragCounter.value++
   isDragging.value = true
   gsap.to(dropZone.value, {
@@ -174,8 +270,110 @@ const handleDragLeave = () => {
   })
 }
 
-const handleFileSelect = (e) => {
-  // Logic to process file
+const handleFileSelect = async (e) => {
+  const file = e.target.files[0]
+  if (file) {
+    await processImageFile(file)
+    // Clear the input so the same file can be selected again
+    e.target.value = ''
+  }
+}
+
+// Main image processing function
+const processImageFile = async (file) => {
+  // Check if server is ready
+  if (!isServerReady.value) {
+    error.value = serverError.value || 'Server is not ready. Please wait...'
+    return
+  }
+  
+  try {
+    // Reset states
+    error.value = null
+    currentProgress.value = 0
+    currentStep.value = 0
+    showProgress.value = true
+    
+    // Simulate progress steps
+    simulateProgress()
+    
+    // Process the image
+    const result = await colorizationStore.colorizeImage(file)
+    
+    // Clear the progress simulation
+    clearProgressSimulation()
+    
+    if (result) {
+      // Success - show result
+      currentProgress.value = 100
+      currentStep.value = 4
+      
+      setTimeout(() => {
+        showProgress.value = false
+        showResult.value = true
+      }, 1000)
+    } else {
+      // Error occurred
+      throw new Error(colorizationStore.error || 'Failed to process image')
+    }
+    
+  } catch (err) {
+    clearProgressSimulation()
+    showProgress.value = false
+    error.value = err.message || 'An error occurred while processing the image'
+    console.error('Image processing error:', err)
+  }
+}
+
+// Simulate processing progress
+const simulateProgress = () => {
+  let step = 0
+  const steps = [
+    { progress: 20, step: 0, duration: 800 },
+    { progress: 40, step: 1, duration: 1200 },
+    { progress: 70, step: 2, duration: 1500 },
+    { progress: 90, step: 3, duration: 1000 }
+  ]
+  
+  progressInterval = setInterval(() => {
+    if (step < steps.length) {
+      currentProgress.value = steps[step].progress
+      currentStep.value = steps[step].step
+      step++
+    } else {
+      clearProgressSimulation()
+    }
+  }, 1000)
+}
+
+const clearProgressSimulation = () => {
+  if (progressInterval) {
+    clearInterval(progressInterval)
+    progressInterval = null
+  }
+  currentProgress.value = 0
+  currentStep.value = 0
+}
+
+// Result handlers
+const handleDownload = () => {
+  colorizationStore.downloadColorizedImage()
+}
+
+const handleTryAnother = () => {
+  showResult.value = false
+  colorizationStore.clearImages()
+}
+
+const handleCloseResult = () => {
+  showResult.value = false
+  colorizationStore.clearImages()
+}
+
+const handleCancelProgress = () => {
+  showProgress.value = false
+  clearProgressSimulation()
+  colorizationStore.clearImages()
 }
 
 // Create particles dynamically
