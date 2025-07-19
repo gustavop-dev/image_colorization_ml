@@ -3,8 +3,8 @@ Dataset loading and preprocessing for image colorization.
 """
 
 import numpy as np
-import pathlib as Path
-from typing import Tuple
+from pathlib import Path
+from typing import Tuple, Union
 from .image_utils import ImageUtils
 
 class DatasetLoader:
@@ -26,7 +26,7 @@ class DatasetLoader:
         self.val_gray = None
         self.val_color = None
     
-    def load_dataset(self, color_dir: str | Path, gray_dir: str | Path, train_split: float = 0.8) -> Tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
+    def load_dataset(self, color_dir: Union[str, Path], gray_dir: Union[str, Path], train_split: float = 0.8) -> Tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
         """
         Load and prepare the training dataset.
         
@@ -34,8 +34,8 @@ class DatasetLoader:
         performs preprocessing, and splits the data into training and validation sets.
         
         Args:
-            color_dir (str | Path): Directory containing color (target) images
-            gray_dir (str | Path): Directory containing grayscale (input) images
+            color_dir (Union[str, Path]): Directory containing color (target) images
+            gray_dir (Union[str, Path]): Directory containing grayscale (input) images
             train_split (float): Fraction of data to use for training (default: 0.8)
             
         Returns:

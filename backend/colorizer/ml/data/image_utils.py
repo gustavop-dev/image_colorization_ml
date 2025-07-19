@@ -7,7 +7,7 @@ import cv2
 from keras.preprocessing.image import img_to_array
 from tqdm import tqdm
 import re
-import pathlib as Path
+from pathlib import Path
 from typing import Tuple, List
 
 class ImageUtils:
