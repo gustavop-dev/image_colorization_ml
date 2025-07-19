@@ -98,10 +98,11 @@
             </p>
 
             <!-- Format pills -->
-            <div class="flex gap-2">
+            <div class="flex flex-wrap justify-center gap-2">
               <span class="px-3 py-1 bg-purple-100 text-purple-700 rounded-full text-sm font-medium">JPG</span>
               <span class="px-3 py-1 bg-pink-100 text-pink-700 rounded-full text-sm font-medium">PNG</span>
               <span class="px-3 py-1 bg-blue-100 text-blue-700 rounded-full text-sm font-medium">WEBP</span>
+              <span class="px-3 py-1 bg-green-100 text-green-700 rounded-full text-sm font-medium">Max: 5MB</span>
             </div>
 
             <!-- Hidden input -->
@@ -118,7 +119,7 @@
       </div>
 
       <!-- Floating features -->
-      <div ref="features" class="mt-16 flex gap-8 opacity-0">
+      <div ref="features" class="mt-16 flex flex-wrap justify-center gap-6 opacity-0">
         <div class="flex items-center gap-2 text-gray-600">
           <div class="w-2 h-2 bg-purple-400 rounded-full"></div>
           <span class="text-sm">Procesamiento instantáneo</span>
@@ -131,6 +132,10 @@
           <div class="w-2 h-2 bg-blue-400 rounded-full"></div>
           <span class="text-sm">Alta precisión</span>
         </div>
+        <div class="flex items-center gap-2 text-gray-600">
+          <div class="w-2 h-2 bg-green-400 rounded-full"></div>
+          <span class="text-sm">Hasta 5MB</span>
+        </div>
       </div>
     </div>
 
@@ -142,6 +147,20 @@
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
         </svg>
         <span class="text-sm font-medium">{{ serverError || 'Connecting to server...' }}</span>
+      </div>
+    </div>
+
+    <!-- File size notification -->
+    <div v-if="selectedFile && !error" 
+         class="fixed top-4 right-4 z-40 bg-blue-100 border border-blue-300 text-blue-800 px-4 py-2 rounded-lg shadow-lg max-w-sm">
+      <div class="flex items-center gap-2">
+        <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+          <path fill-rule="evenodd" d="M4 3a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V5a2 2 0 00-2-2H4zm12 12H4l4-8 3 6 2-4 3 6z" clip-rule="evenodd"></path>
+        </svg>
+        <div class="text-sm">
+          <div class="font-medium">{{ selectedFile.name }}</div>
+          <div class="text-blue-600">{{ selectedFile.size }}</div>
+        </div>
       </div>
     </div>
 
@@ -223,6 +242,10 @@ const currentStep = ref(0)
 // Error state
 const error = ref(null)
 
+// File preview state
+const selectedFile = ref(null)
+const showFilePreview = ref(false)
+
 // Computed properties
 const isServerReady = computed(() => healthStore.isReadyForColorization())
 const serverError = computed(() => healthStore.error)
@@ -235,11 +258,29 @@ const handleDrop = async (e) => {
   
   const files = e.dataTransfer.files
   if (files.length > 0) {
-    await processImageFile(files[0])
+    const file = files[0]
+    
+    // Store file info
+    selectedFile.value = {
+      file: file,
+      name: file.name,
+      size: formatFileSize(file.size),
+      type: file.type
+    }
+    
+    // Immediate validation
+    if (!validateFileSize(file)) {
+      error.value = `File too large: ${selectedFile.value.size}. Maximum allowed: 5MB.`;
+      selectedFile.value = null;
+      return;
+    }
+    
+    await processImageFile(file)
+    selectedFile.value = null
   }
 }
 
-const handleDragEnter = () => {
+const handleDragEnter = (e) => {
   // Only allow drag if server is ready
   if (!isServerReady.value) {
     return
@@ -247,6 +288,12 @@ const handleDragEnter = () => {
   
   dragCounter.value++
   isDragging.value = true
+  
+  // Clear any previous errors when starting a new drag
+  if (error.value) {
+    error.value = null
+  }
+  
   gsap.to(dropZone.value, {
     scale: 1.05,
     duration: 0.3,
@@ -270,10 +317,44 @@ const handleDragLeave = () => {
 const handleFileSelect = async (e) => {
   const file = e.target.files[0]
   if (file) {
+    // Store file info for preview
+    selectedFile.value = {
+      file: file,
+      name: file.name,
+      size: formatFileSize(file.size),
+      type: file.type
+    }
+    
+    // Immediate validation
+    if (!validateFileSize(file)) {
+      error.value = `File too large: ${selectedFile.value.size}. Maximum allowed: 5MB.`;
+      selectedFile.value = null;
+      e.target.value = '';
+      return;
+    }
+    
+    // Process immediately for better UX
     await processImageFile(file)
+    
     // Clear the input so the same file can be selected again
     e.target.value = ''
+    selectedFile.value = null
   }
+}
+
+// File size validation helper
+const validateFileSize = (file) => {
+  const maxSize = 5 * 1024 * 1024; // 5MB in bytes
+  return file.size <= maxSize;
+}
+
+// Format file size for display
+const formatFileSize = (bytes) => {
+  if (bytes === 0) return '0 Bytes';
+  const k = 1024;
+  const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+  const i = Math.floor(Math.log(bytes) / Math.log(k));
+  return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
 }
 
 // Main image processing function
@@ -281,6 +362,13 @@ const processImageFile = async (file) => {
   // Check if server is ready
   if (!isServerReady.value) {
     error.value = serverError.value || 'Server is not ready. Please wait...'
+    return
+  }
+
+  // Immediate file size validation with user-friendly message
+  if (!validateFileSize(file)) {
+    const fileSize = formatFileSize(file.size);
+    error.value = `File too large: ${fileSize}. Maximum allowed: 5MB. Please choose a smaller image.`;
     return
   }
   

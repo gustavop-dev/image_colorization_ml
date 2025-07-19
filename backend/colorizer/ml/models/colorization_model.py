@@ -172,7 +172,7 @@ class ColorizationModel:
         
         return self.trainer.evaluate(self.val_gray, self.val_color)
     
-    def colorize(self, image_path: Union[str, Path], save_to: Union[str, Path, None] = None) -> np.ndarray:
+    def colorize(self, image_path: Union[str, Path], save_to: Union[str, Path, None] = None, use_patches: bool = True, auto_compress: bool = True, max_size_mb: float = 1.0) -> np.ndarray:
         """
         Colorize a single grayscale image using the trained model.
         
@@ -182,6 +182,9 @@ class ColorizationModel:
         Args:
             image_path (Union[str, Path]): Path to input grayscale image
             save_to (Union[str, Path, None]): Optional path to save colorized output
+            use_patches (bool): Whether to use patch-based processing for high resolution
+            auto_compress (bool): Whether to automatically compress large images
+            max_size_mb (float): Maximum file size in MB before compression
             
         Returns:
             np.ndarray: Colorized image array in uint8 RGB format
@@ -192,7 +195,7 @@ class ColorizationModel:
         if self.colorizer is None:
             raise RuntimeError("Model not loaded. Call load_trained_model() or build_model() first.")
         
-        return self.colorizer.colorize(image_path, save_to)
+        return self.colorizer.colorize(image_path, save_to, use_patches, auto_compress, max_size_mb)
     
     def save_model(self, path: Union[str, Path]) -> None:
         """

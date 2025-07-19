@@ -47,10 +47,10 @@ export const colorizationStore = {
       return null;
     }
 
-    // Validate size (10MB maximum)
-    const maxSize = 10 * 1024 * 1024; // 10MB in bytes
+    // Validate size (5MB maximum for better UX)
+    const maxSize = 5 * 1024 * 1024; // 5MB in bytes
     if (imageFile.size > maxSize) {
-      this.setError('File is too large. Maximum allowed: 10MB');
+      this.setError('File is too large. Maximum allowed: 5MB');
       return null;
     }
 

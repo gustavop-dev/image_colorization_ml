@@ -9,7 +9,7 @@ from pathlib import Path
 from typing import Tuple, Optional
 from django.core.files.uploadedfile import UploadedFile
 from django.http import HttpResponse, FileResponse
-from PIL import Image
+from PIL import Image  # For comprehensive image validation and processing
 
 from .ml.config import (
     MAX_FILE_SIZE, 
@@ -38,13 +38,25 @@ def validate_image_file(uploaded_file: UploadedFile) -> Tuple[bool, str]:
     if file_extension not in ALLOWED_IMAGE_EXTENSIONS:
         return False, f"Invalid file type. Allowed: {', '.join(ALLOWED_IMAGE_EXTENSIONS)}"
     
-    # Try to open as image
+    # Try to open as image using PIL for comprehensive validation
     try:
         # Reset file pointer to beginning
         uploaded_file.seek(0)
         image = Image.open(uploaded_file)
         image.verify()  # Verify it's a valid image
         uploaded_file.seek(0)  # Reset again for later use
+        
+        # Additional checks
+        if image.size[0] < 10 or image.size[1] < 10:
+            return False, "Image too small (minimum 10x10 pixels)"
+        
+        if image.size[0] > 10000 or image.size[1] > 10000:
+            return False, "Image too large (maximum 10000x10000 pixels)"
+        
+        # Verify supported format (PIL can open more than we want to support)
+        if image.format not in ['JPEG', 'PNG', 'WEBP']:
+            return False, f"Unsupported image format: {image.format}. Supported: JPEG, PNG, WEBP"
+        
         return True, ""
         
     except Exception as e:
@@ -124,7 +136,7 @@ def create_image_response(image_path: Path, filename: Optional[str] = None) -> F
         '.jpg': 'image/jpeg',
         '.jpeg': 'image/jpeg',
         '.png': 'image/png',
-        '.bmp': 'image/bmp',
+        '.webp': 'image/webp',
     }
     content_type = content_type_map.get(extension, 'image/jpeg')
     
