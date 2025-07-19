@@ -223,9 +223,6 @@ const currentStep = ref(0)
 // Error state
 const error = ref(null)
 
-// Progress simulation
-let progressInterval = null
-
 // Computed properties
 const isServerReady = computed(() => healthStore.isReadyForColorization())
 const serverError = computed(() => healthStore.error)
@@ -300,57 +297,57 @@ const processImageFile = async (file) => {
     // Process the image
     const result = await colorizationStore.colorizeImage(file)
     
-    // Clear the progress simulation
-    clearProgressSimulation()
-    
     if (result) {
-      // Success - show result
+      // Success - ensure we reach 100% and final step
       currentProgress.value = 100
       currentStep.value = 4
       
+      // Show completion for a moment before transitioning
       setTimeout(() => {
         showProgress.value = false
         showResult.value = true
-      }, 1000)
+      }, 1200)
     } else {
       // Error occurred
       throw new Error(colorizationStore.error || 'Failed to process image')
     }
     
   } catch (err) {
-    clearProgressSimulation()
     showProgress.value = false
+    clearProgressSimulation()
     error.value = err.message || 'An error occurred while processing the image'
     console.error('Image processing error:', err)
   }
 }
 
-// Simulate processing progress
+// Smart progress simulation that syncs with real processing
 const simulateProgress = () => {
   let step = 0
   const steps = [
-    { progress: 20, step: 0, duration: 800 },
-    { progress: 40, step: 1, duration: 1200 },
-    { progress: 70, step: 2, duration: 1500 },
-    { progress: 90, step: 3, duration: 1000 }
+    { progress: 15, step: 0, minTime: 500 },   // Analyzing image structure
+    { progress: 35, step: 1, minTime: 800 },   // Detecting objects and features
+    { progress: 60, step: 2, minTime: 1200 },  // Applying AI colorization
+    { progress: 85, step: 3, minTime: 1000 }   // Enhancing color vibrancy
   ]
   
-  progressInterval = setInterval(() => {
+  const advanceStep = () => {
     if (step < steps.length) {
       currentProgress.value = steps[step].progress
       currentStep.value = steps[step].step
-      step++
-    } else {
-      clearProgressSimulation()
+      
+      // Wait minimum time for this step
+      setTimeout(() => {
+        step++
+        advanceStep()
+      }, steps[step]?.minTime || 500)
     }
-  }, 1000)
+  }
+  
+  advanceStep()
 }
 
 const clearProgressSimulation = () => {
-  if (progressInterval) {
-    clearInterval(progressInterval)
-    progressInterval = null
-  }
+  // No need to clear intervals anymore since we use timeouts
   currentProgress.value = 0
   currentStep.value = 0
 }
@@ -374,6 +371,7 @@ const handleCancelProgress = () => {
   showProgress.value = false
   clearProgressSimulation()
   colorizationStore.clearImages()
+  // TODO: Cancel actual image processing request if possible
 }
 
 // Create particles dynamically
