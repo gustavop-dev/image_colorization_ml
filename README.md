@@ -41,7 +41,6 @@ image_colorization_ml/
 │   │   └── apps.py             # App configuration
 │   ├── config/                 # Django project settings
 │   ├── venv/                   # Python virtual environment
-│   ├── db.sqlite3              # SQLite database
 │   ├── manage.py               # Django management script
 │   └── requirements.txt        # Python dependencies
 ├── frontend/                   # Vue.js frontend
@@ -154,12 +153,7 @@ pip install -r requirements.txt
    backend/colorizer/ml/trained_models/colorization_model.h5
    ```
 
-#### Step 6: Run Database Migrations
-```bash
-python manage.py migrate
-```
-
-#### Step 7: Start Django Development Server
+#### Step 6: Start Django Development Server
 ```bash
 python manage.py runserver
 ```
@@ -170,9 +164,9 @@ The backend API will be available at `http://localhost:8000`.
 
 After setting up both frontend and backend:
 
-1. **Backend**: Visit `http://localhost:8000/admin` to verify Django is running
+1. **Backend**: Visit `http://localhost:8000/api/health/` to verify Django and model are ready
 2. **Frontend**: Visit `http://localhost:3000` to access the web interface
-3. **API**: Test the API endpoints at `http://localhost:8000/api/`
+3. **API**: Test the colorization endpoint at `http://localhost:8000/api/colorize/`
 
 ### Troubleshooting
 
@@ -191,10 +185,8 @@ After setting up both frontend and backend:
 
 The backend provides the following REST API endpoints:
 
-- `POST /api/upload/` - Upload an image for colorization
-- `GET /api/colorize/?id={image_id}` - Get the status of a colorization process
-- `GET /api/history/` - Get a list of all processed images
-- `GET /api/image/{image_id}/` - Get details for a specific image
+- `POST /api/colorize/` - Upload and colorize an image
+- `GET /api/health/` - Check backend health and model status
 
 ## ML Model Details
 
@@ -204,19 +196,6 @@ The colorization model is based on a convolutional autoencoder architecture:
 - **Decoder**: Reconstructs the color channels
 
 The model uses the LAB color space, where the L channel represents lightness (grayscale) and the A and B channels contain the color information. The model takes the L channel as input and predicts the A and B channels.
-
-## Development Team Responsibilities
-
-- **Backend Team**: Django API development, model integration
-- **Frontend Team**: Vue.js interface development
-- **ML Team**: Model training, optimization, and deployment
-
-## Future Work
-
-- Implement transfer learning with pre-trained models
-- Enhance the model architecture for better colorization
-- Add user authentication and result sharing
-- Optimize for real-time colorization
 
 ## License
 
