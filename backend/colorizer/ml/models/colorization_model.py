@@ -93,6 +93,37 @@ class ColorizationModel:
         self.colorizer = ImageColorizer(self.model, self.img_size)
         return self.model
     
+    def load_trained_model(self, model_path: str | Path) -> None:
+        """
+        Load a pre-trained colorization model from disk.
+        
+        This method loads a previously trained and saved model, setting up
+        the necessary components for inference without requiring training.
+        
+        Args:
+            model_path (str | Path): Path to the saved trained model
+            
+        Raises:
+            FileNotFoundError: If the model file doesn't exist
+            ValueError: If the model file is corrupted or invalid
+        """
+        model_path = Path(model_path)
+        
+        if not model_path.exists():
+            raise FileNotFoundError(f"Model file not found: {model_path}")
+        
+        try:
+            # Load the trained model
+            self.model = tf.keras.models.load_model(str(model_path))
+            
+            # Initialize the colorizer component for inference
+            self.colorizer = ImageColorizer(self.model, self.img_size)
+            
+            print(f"Successfully loaded trained model from {model_path}")
+            
+        except Exception as e:
+            raise ValueError(f"Failed to load model from {model_path}: {str(e)}")
+    
     def train(self, epochs: int = 50, batch_size: int = 32) -> tf.keras.callbacks.History:
         """
         Train the colorization model on the loaded dataset.
@@ -159,7 +190,7 @@ class ColorizationModel:
             RuntimeError: If the model hasn't been built yet
         """
         if self.colorizer is None:
-            raise RuntimeError("Model not built. Call build_model() first.")
+            raise RuntimeError("Model not loaded. Call load_trained_model() or build_model() first.")
         
         return self.colorizer.colorize(image_path, save_to)
     
