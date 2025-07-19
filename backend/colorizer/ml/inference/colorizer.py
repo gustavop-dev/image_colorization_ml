@@ -5,7 +5,8 @@ Inference and colorization functionality for trained models.
 import numpy as np
 import tensorflow as tf
 import cv2
-import pathlib as Path
+from pathlib import Path
+from typing import Union
 
 class ImageColorizer:
     """
@@ -23,7 +24,7 @@ class ImageColorizer:
         self.model = model
         self.img_size = img_size
     
-    def colorize(self, image_path: str | Path, save_to: str | Path | None = None) -> np.ndarray:
+    def colorize(self, image_path: Union[str, Path], save_to: Union[str, Path, None] = None) -> np.ndarray:
         """
         Colorize a single grayscale image using the trained model.
         
@@ -31,8 +32,8 @@ class ImageColorizer:
         through the model, and returns the colorized result.
         
         Args:
-            image_path (str | Path): Path to input grayscale image
-            save_to (str | Path | None): Optional path to save colorized output
+            image_path (Union[str, Path]): Path to input grayscale image
+            save_to (Union[str, Path, None]): Optional path to save colorized output
             
         Returns:
             np.ndarray: Colorized image array in uint8 RGB format
@@ -64,7 +65,7 @@ class ImageColorizer:
 
         return pred
     
-    def save_model(self, path: str | Path) -> None:
+    def save_model(self, path: Union[str, Path]) -> None:
         """
         Save the trained model to disk.
         
@@ -72,7 +73,7 @@ class ImageColorizer:
         specified path in TensorFlow's SavedModel format.
         
         Args:
-            path (str | Path): Path where the model should be saved
+            path (Union[str, Path]): Path where the model should be saved
             
         Raises:
             RuntimeError: If the model hasn't been provided

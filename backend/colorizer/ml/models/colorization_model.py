@@ -4,8 +4,8 @@ Main colorization model that orchestrates all components.
 
 import numpy as np
 import tensorflow as tf
-import pathlib as Path
-from typing import List
+from pathlib import Path
+from typing import List, Union
 
 from ..data.dataset_loader import DatasetLoader
 from ..training.trainer import ModelTrainer
@@ -57,7 +57,7 @@ class ColorizationModel:
         self.val_gray = None
         self.val_color = None
     
-    def load_dataset(self, color_dir: str | Path, gray_dir: str | Path, train_split: float = 0.8) -> None:
+    def load_dataset(self, color_dir: Union[str, Path], gray_dir: Union[str, Path], train_split: float = 0.8) -> None:
         """
         Load and prepare the training dataset.
         
@@ -65,8 +65,8 @@ class ColorizationModel:
         performs preprocessing, and splits the data into training and validation sets.
         
         Args:
-            color_dir (str | Path): Directory containing color (target) images
-            gray_dir (str | Path): Directory containing grayscale (input) images
+            color_dir (Union[str, Path]): Directory containing color (target) images
+            gray_dir (Union[str, Path]): Directory containing grayscale (input) images
             train_split (float): Fraction of data to use for training (default: 0.8)
             
         Raises:
@@ -92,8 +92,8 @@ class ColorizationModel:
         self.trainer = ModelTrainer(self.model)
         self.colorizer = ImageColorizer(self.model, self.img_size)
         return self.model
-      
-    def load_trained_model(self, model_path: str | Path) -> None:
+    
+    def load_trained_model(self, model_path: Union[str, Path]) -> None:
         """
         Load a pre-trained colorization model from disk.
         
@@ -101,7 +101,7 @@ class ColorizationModel:
         the necessary components for inference without requiring training.
         
         Args:
-            model_path (str | Path): Path to the saved trained model
+            model_path (Union[str, Path]): Path to the saved trained model
             
         Raises:
             FileNotFoundError: If the model file doesn't exist
@@ -172,7 +172,7 @@ class ColorizationModel:
         
         return self.trainer.evaluate(self.val_gray, self.val_color)
     
-    def colorize(self, image_path: str | Path, save_to: str | Path | None = None) -> np.ndarray:
+    def colorize(self, image_path: Union[str, Path], save_to: Union[str, Path, None] = None) -> np.ndarray:
         """
         Colorize a single grayscale image using the trained model.
         
@@ -180,8 +180,8 @@ class ColorizationModel:
         through the model, and returns the colorized result.
         
         Args:
-            image_path (str | Path): Path to input grayscale image
-            save_to (str | Path | None): Optional path to save colorized output
+            image_path (Union[str, Path]): Path to input grayscale image
+            save_to (Union[str, Path, None]): Optional path to save colorized output
             
         Returns:
             np.ndarray: Colorized image array in uint8 RGB format
@@ -194,7 +194,7 @@ class ColorizationModel:
         
         return self.colorizer.colorize(image_path, save_to)
     
-    def save_model(self, path: str | Path) -> None:
+    def save_model(self, path: Union[str, Path]) -> None:
         """
         Save the trained model to disk.
         
@@ -202,7 +202,7 @@ class ColorizationModel:
         specified path in TensorFlow's SavedModel format.
         
         Args:
-            path (str | Path): Path where the model should be saved
+            path (Union[str, Path]): Path where the model should be saved
             
         Raises:
             RuntimeError: If the model hasn't been built yet
